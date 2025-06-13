@@ -6,7 +6,7 @@ import (
 
 type ToDoItem struct {
 	gorm.Model
-	Text string `gorm:"not null"`
+	Text string `gorm:"not null" validate:"required"`
 	Done bool   `gorm:"default:false"`
 }
 

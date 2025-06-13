@@ -1,0 +1,14 @@
+services:
+  mysql-test:
+    image: mysql:8
+    container_name: todo-app-test-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: todo_test
+    ports:
+      - "3307:3306"  # Using a different port to avoid conflicts with the main DB
+    volumes:
+      - mysql_test_data:/var/lib/mysql
+
+volumes:
+  mysql_test_data: 
