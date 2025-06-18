@@ -1,7 +1,6 @@
 package todos
 
 import (
-	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 	"net/http"
@@ -16,10 +15,9 @@ type EndpointHandler interface {
 }
 
 type endpointHandler struct {
-	logger    *zap.SugaredLogger
-	service   Service
-	e         *echo.Echo
-	validator *validator.Validate
+	logger  *zap.SugaredLogger
+	service Service
+	e       *echo.Echo
 }
 
 type endpoint struct {
@@ -32,13 +30,11 @@ func GetEndpointHandler(
 	logger *zap.SugaredLogger,
 	service Service,
 	e *echo.Echo,
-	validator *validator.Validate,
 ) EndpointHandler {
 	return &endpointHandler{
-		logger:    logger,
-		service:   service,
-		e:         e,
-		validator: validator,
+		logger:  logger,
+		service: service,
+		e:       e,
 	}
 }
 
