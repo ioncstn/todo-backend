@@ -8,6 +8,10 @@ import (
 	"todo-app/internal/auth"
 	"todo-app/internal/todos"
 	"todo-app/internal/users"
+	"todo-app/pkg/email"
+
+	"github.com/go-playground/validator/v10"
+	echoSwagger "github.com/swaggo/echo-swagger"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
@@ -47,10 +51,10 @@ func InitializeServer() {
 
 	v := validator.New()
 
-	// Initialize services
-	todoService := todos.GetService(logger, todoRepository, v)
-	userService := users.GetService(logger, userRepository, v)
+	emailService := email.NewService(logger)
 	authService := auth.GetService(logger, userRepository, authRepository, v)
+	todoService := todos.GetService(logger, todoRepository, v)
+	userService := users.GetService(logger, userRepository, v, emailService)
 
 	// Initialize handlers
 	todoEndpointHandler := todos.GetEndpointHandler(logger, todoService, e)

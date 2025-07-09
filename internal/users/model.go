@@ -1,21 +1,25 @@
 package users
 
 import (
-	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 	"strings"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 type User struct {
-	ID        uint `gorm:"primarykey"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt *time.Time `gorm:"index"`
-	FirstName string     `gorm:"not null" validate:"required"`
-	LastName  string     `gorm:"not null" validate:"required"`
-	Email     string     `gorm:"type:varchar(255);uniqueIndex;not null" validate:"required,email"`
-	Password  string     `gorm:"not null" validate:"required"`
+	ID                      uint `gorm:"primarykey"`
+	CreatedAt               time.Time
+	UpdatedAt               time.Time
+	DeletedAt               *time.Time `gorm:"index"`
+	FirstName               string     `gorm:"not null" validate:"required"`
+	LastName                string     `gorm:"not null" validate:"required"`
+	Email                   string     `gorm:"type:varchar(255);uniqueIndex;not null" validate:"required,email"`
+	Password                string     `gorm:"not null" validate:"required"`
+	IsEmailVerified         bool       `gorm:"default:false"`
+	EmailVerificationToken  string     `gorm:"type:varchar(255);index"`
+	EmailVerificationExpiry *time.Time
 }
 
 // BeforeSave : hook before a user is saved
