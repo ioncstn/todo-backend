@@ -22,7 +22,7 @@ type service struct {
 	appURL   string
 }
 
-func NewService(logger *zap.SugaredLogger) Service {
+func GetService(logger *zap.SugaredLogger) Service {
 	smtpPort, _ := strconv.Atoi(os.Getenv("SMTP_PORT"))
 
 	return &service{

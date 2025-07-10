@@ -18,4 +18,5 @@ const (
 	ErrorMissingToken        = "error.missing.token"
 	ErrorUserNotFound        = "error.user.not.found"
 	ErrorMissingRefreshToken = "error.missing.refresh.token"
+	ErrorEmailUnverified     = "error.email.unverified"
 )

@@ -11,9 +11,6 @@ import (
 	"todo-app/pkg/email"
 
 	"github.com/go-playground/validator/v10"
-	echoSwagger "github.com/swaggo/echo-swagger"
-
-	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
@@ -51,7 +48,8 @@ func InitializeServer() {
 
 	v := validator.New()
 
-	emailService := email.NewService(logger)
+	//Initialize services
+	emailService := email.GetService(logger)
 	authService := auth.GetService(logger, userRepository, authRepository, v)
 	todoService := todos.GetService(logger, todoRepository, v)
 	userService := users.GetService(logger, userRepository, v, emailService)
@@ -68,7 +66,8 @@ func InitializeServer() {
 		return func(c echo.Context) error {
 			// Skip JWT validation for auth endpoints
 			path := c.Request().URL.Path
-			if path == "/login" || path == "/logout" || path == "/refresh" || path == "/user" || strings.Contains(path, "/swagger") {
+			if path == "/login" || path == "/logout" || path == "/refresh" || path == "/user" ||
+				path == "/verify-email" || strings.Contains(path, "/swagger") {
 				return next(c)
 			}
 			// Apply JWT middleware for all other routes
