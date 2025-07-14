@@ -69,6 +69,11 @@ func (s *service) Login(ctx context.Context, req LoginRequest) (LoginResponse, e
 		return LoginResponse{}, errors.New(locale.ErrorInvalidCredentials)
 	}
 
+	if user.IsEmailVerified == false {
+		s.logger.Warnw("email not verified", "email", req.Email)
+		return LoginResponse{}, errors.New(locale.ErrorEmailUnverified)
+	}
+
 	expiresAt := time.Now().Add(s.tokenExpiration)
 	claims := JWTClaims{
 		UserID: user.ID,

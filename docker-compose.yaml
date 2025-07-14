@@ -16,8 +16,14 @@ services:
       DB_NAME: todo
       DB_HOST: mysql
       JWT_SECRET: jwt_secret
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      SMTP_USER: ""
+      SMTP_PASSWORD: ""
+      APP_URL: "http://localhost:8765"
     depends_on:
       - mysql
+      - mailpit
     command: ["air"]
 
   mysql:
@@ -31,5 +37,18 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
 
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: mailpit
+    ports:
+      - "1025:1025"  # SMTP port
+      - "8025:8025"  # Web UI port
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+    volumes:
+      - mailpit_data:/data
+
 volumes:
   mysql_data:
+  mailpit_data:
