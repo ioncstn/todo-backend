@@ -12,7 +12,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func TestService_Create(t *testing.T) {
+func TestService_Login(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockRepo := NewMockRepository(ctrl)
 	v := validator.New()
