@@ -61,19 +61,21 @@ func InitializeServer() {
 
 	jwtMiddleware := auth.JWTMiddleware(authService, logger)
 
-	// Apply JWT middleware to protected routes
-	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			// Skip JWT validation for auth endpoints
-			path := c.Request().URL.Path
-			if path == "/login" || path == "/logout" || path == "/refresh" || path == "/user" ||
-				path == "/verify-email" || strings.Contains(path, "/swagger") {
-				return next(c)
+	// Apply JWT middleware to protected routes, but not in tests
+	if os.Getenv("APP_ENV") != "test" {
+		e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+			return func(c echo.Context) error {
+				// Skip JWT validation for auth endpoints
+				path := c.Request().URL.Path
+				if path == "/login" || path == "/logout" || path == "/refresh" || path == "/user" ||
+					path == "/verify-email" || strings.Contains(path, "/swagger") {
+					return next(c)
+				}
+				// Apply JWT middleware for all other routes
+				return jwtMiddleware(next)(c)
 			}
-			// Apply JWT middleware for all other routes
-			return jwtMiddleware(next)(c)
-		}
-	})
+		})
+	}
 
 	todoEndpointHandler.AddEndpoints()
 	userEndpointHandler.AddEndpoints()

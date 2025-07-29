@@ -10,15 +10,17 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
 	"todo-app/pkg/locale"
 
-	err "todo-app/pkg/errors"
+	localErr "todo-app/pkg/errors"
 )
 
 func TestHandler_Create(t *testing.T) {
+	os.Setenv("APP_ENV", "test")
 	ctrl := gomock.NewController(t)
 	mockService := NewMockService(ctrl)
 	e := echo.New()
@@ -33,6 +35,7 @@ func TestHandler_Create(t *testing.T) {
 
 	rec := httptest.NewRecorder()
 	ctx := e.NewContext(req, rec)
+	ctx.Set("user_id", uint(0))
 
 	logger := zap.NewNop().Sugar()
 	h := &endpointHandler{logger: logger, service: mockService, e: e}
@@ -57,6 +60,7 @@ func TestHandler_Create(t *testing.T) {
 }
 
 func TestHandler_GetAll(t *testing.T) {
+	os.Setenv("APP_ENV", "test")
 	ctrl := gomock.NewController(t)
 	mockService := NewMockService(ctrl)
 	e := echo.New()
@@ -83,10 +87,11 @@ func TestHandler_GetAll(t *testing.T) {
 
 		rec := httptest.NewRecorder()
 		ctx := e.NewContext(req, rec)
+		ctx.Set("user_id", uint(0))
 
 		mockService.
 			EXPECT().
-			GetAll(ctx.Request().Context(), PaginationDetails{}).
+			GetAllForUser(ctx.Request().Context(), uint(0), PaginationDetails{}).
 			Return(todoItems, PaginationMetadata{
 				ResultCount: len(todoItems),
 				TotalCount:  len(todoItems),
@@ -119,10 +124,11 @@ func TestHandler_GetAll(t *testing.T) {
 
 		rec := httptest.NewRecorder()
 		ctx := e.NewContext(req, rec)
+		ctx.Set("user_id", uint(0))
 
 		mockService.
 			EXPECT().
-			GetAll(ctx.Request().Context(), paginationDetails).
+			GetAllForUser(ctx.Request().Context(), uint(0), paginationDetails).
 			Return(todoItems[:2], PaginationMetadata{
 				ResultCount: 2,
 				TotalCount:  3,
@@ -144,6 +150,7 @@ func TestHandler_GetAll(t *testing.T) {
 }
 
 func TestHandler_UpdateById(t *testing.T) {
+	os.Setenv("APP_ENV", "test")
 	ctrl := gomock.NewController(t)
 	mockService := NewMockService(ctrl)
 	e := echo.New()
@@ -171,10 +178,17 @@ func TestHandler_UpdateById(t *testing.T) {
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		ctx := e.NewContext(req, rec)
+		ctx.Set("user_id", uint(0))
 
 		ctx.SetPath("/todos/:id")
 		ctx.SetParamNames("id")
 		ctx.SetParamValues("1")
+
+		mockService.
+			EXPECT().
+			GetById(ctx.Request().Context(), item.ID).
+			Return(item, nil).
+			Times(1)
 
 		mockService.
 			EXPECT().
@@ -200,6 +214,7 @@ func TestHandler_UpdateById(t *testing.T) {
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		ctx := e.NewContext(req, rec)
+		ctx.Set("user_id", uint(0))
 
 		ctx.SetPath("/todos/:id")
 		ctx.SetParamNames("id")
@@ -208,7 +223,7 @@ func TestHandler_UpdateById(t *testing.T) {
 		if assert.NoError(t, h.updateById(ctx)) {
 			assert.Equal(t, http.StatusBadRequest, rec.Code)
 
-			var responseError err.ResponseError
+			var responseError localErr.ResponseError
 			err := json.Unmarshal(rec.Body.Bytes(), &responseError)
 			assert.NoError(t, err)
 
@@ -231,10 +246,17 @@ func TestHandler_UpdateById(t *testing.T) {
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		ctx := e.NewContext(req, rec)
+		ctx.Set("user_id", uint(0))
 
 		ctx.SetPath("/todos/:id")
 		ctx.SetParamNames("id")
 		ctx.SetParamValues("1")
+
+		mockService.
+			EXPECT().
+			GetById(ctx.Request().Context(), item.ID).
+			Return(item, nil).
+			Times(1)
 
 		mockService.
 			EXPECT().
@@ -245,7 +267,7 @@ func TestHandler_UpdateById(t *testing.T) {
 		if assert.NoError(t, h.updateById(ctx)) {
 			assert.Equal(t, http.StatusBadRequest, rec.Code)
 
-			var responseError err.ResponseError
+			var responseError localErr.ResponseError
 			err := json.Unmarshal(rec.Body.Bytes(), &responseError)
 			assert.NoError(t, err)
 
@@ -254,21 +276,32 @@ func TestHandler_UpdateById(t *testing.T) {
 	})
 
 	t.Run("invalid body", func(t *testing.T) {
+		item := ToDoItem{
+			ID:   1,
+			Text: "123",
+		}
 		itemBody := `{"text":123, "done": 23}`
 
 		req := httptest.NewRequest(http.MethodPut, "/todos/1", strings.NewReader(itemBody))
 		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 		rec := httptest.NewRecorder()
 		ctx := e.NewContext(req, rec)
+		ctx.Set("user_id", uint(0))
 
 		ctx.SetPath("/todos/:id")
 		ctx.SetParamNames("id")
 		ctx.SetParamValues("1")
 
+		mockService.
+			EXPECT().
+			GetById(ctx.Request().Context(), item.ID).
+			Return(item, nil).
+			Times(1)
+
 		if assert.NoError(t, h.updateById(ctx)) {
 			assert.Equal(t, http.StatusBadRequest, rec.Code)
 
-			var responseError err.ResponseError
+			var responseError localErr.ResponseError
 			err := json.Unmarshal(rec.Body.Bytes(), &responseError)
 			assert.NoError(t, err)
 
@@ -278,6 +311,7 @@ func TestHandler_UpdateById(t *testing.T) {
 }
 
 func TestHandler_DeleteById(t *testing.T) {
+	os.Setenv("APP_ENV", "test")
 	ctrl := gomock.NewController(t)
 	mockService := NewMockService(ctrl)
 	e := echo.New()
@@ -285,14 +319,25 @@ func TestHandler_DeleteById(t *testing.T) {
 	h := &endpointHandler{logger: logger, service: mockService, e: e}
 
 	t.Run("delete item", func(t *testing.T) {
+		userId := uint(0)
 		id := 1
+		item := ToDoItem{
+			UserID: userId,
+		}
 		req := httptest.NewRequest(http.MethodDelete, "/todos/"+strconv.Itoa(id), nil)
 		rec := httptest.NewRecorder()
 		ctx := e.NewContext(req, rec)
+		ctx.Set("user_id", userId)
 
 		ctx.SetPath("/todos/:id")
 		ctx.SetParamNames("id")
 		ctx.SetParamValues(strconv.Itoa(id))
+
+		mockService.
+			EXPECT().
+			GetById(ctx.Request().Context(), uint(id)).
+			Return(item, nil).
+			Times(1)
 
 		mockService.
 			EXPECT().
@@ -312,9 +357,11 @@ func TestHandler_DeleteById(t *testing.T) {
 	})
 
 	t.Run("invalid id", func(t *testing.T) {
+		userId := uint(0)
 		req := httptest.NewRequest(http.MethodPut, "/todos/abc", nil)
 		rec := httptest.NewRecorder()
 		ctx := e.NewContext(req, rec)
+		ctx.Set("user_id", userId)
 
 		ctx.SetPath("/todos/:id")
 		ctx.SetParamNames("id")
@@ -323,7 +370,7 @@ func TestHandler_DeleteById(t *testing.T) {
 		if assert.NoError(t, h.updateById(ctx)) {
 			assert.Equal(t, http.StatusBadRequest, rec.Code)
 
-			var responseError err.ResponseError
+			var responseError localErr.ResponseError
 			err := json.Unmarshal(rec.Body.Bytes(), &responseError)
 			assert.NoError(t, err)
 

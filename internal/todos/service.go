@@ -10,7 +10,7 @@ import (
 
 type Service interface {
 	Create(ctx context.Context, item *ToDoItem) error
-	GetAll(ctx context.Context, details PaginationDetails) ([]ToDoItem, PaginationMetadata, error)
+	GetAllForUser(ctx context.Context, userId uint, details PaginationDetails) ([]ToDoItem, PaginationMetadata, error)
 	GetById(ctx context.Context, id uint) (ToDoItem, error)
 	UpdateById(ctx context.Context, id uint, item ToDoItemUpdateInput) (ToDoItem, error)
 	DeleteById(ctx context.Context, id uint) error
@@ -38,10 +38,10 @@ func (s *service) Create(ctx context.Context, item *ToDoItem) error {
 	return s.repository.Create(ctx, item)
 }
 
-func (s *service) GetAll(ctx context.Context, details PaginationDetails) ([]ToDoItem, PaginationMetadata, error) {
+func (s *service) GetAllForUser(ctx context.Context, userId uint, details PaginationDetails) ([]ToDoItem, PaginationMetadata, error) {
 	s.logger.Infow("get all todos", "details", details)
 
-	items, err := s.repository.GetAll(ctx, details)
+	items, err := s.repository.GetAllForUser(ctx, userId, details)
 
 	if err != nil {
 		return nil, PaginationMetadata{}, err

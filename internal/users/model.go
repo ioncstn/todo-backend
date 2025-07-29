@@ -3,6 +3,7 @@ package users
 import (
 	"strings"
 	"time"
+	"todo-app/internal/todos"
 
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -20,6 +21,7 @@ type User struct {
 	IsEmailVerified         bool       `gorm:"default:false"`
 	EmailVerificationToken  string     `gorm:"type:varchar(255);index"`
 	EmailVerificationExpiry *time.Time
+	Todos                   []todos.ToDoItem
 }
 
 // BeforeSave : hook before a user is saved

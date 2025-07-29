@@ -94,13 +94,14 @@ func (h *endpointHandler) hello(ctx echo.Context) error {
 // @Router /todos [get]
 func (h *endpointHandler) getAll(ctx echo.Context) error {
 	h.logger.Infow("reading todo item...")
+	userId := ctx.Get("user_id").(uint)
 	details := PaginationDetails{}
 
 	details.Page, _ = strconv.Atoi(ctx.QueryParam("page"))
 	details.Limit, _ = strconv.Atoi(ctx.QueryParam("limit"))
 	details.Order = ctx.QueryParam("order")
 
-	items, metadata, err := h.service.GetAll(ctx.Request().Context(), details)
+	items, metadata, err := h.service.GetAllForUser(ctx.Request().Context(), userId, details)
 	if err != nil {
 		h.logger.Warn("could not read todo items", "error", err.Error())
 
@@ -123,6 +124,7 @@ func (h *endpointHandler) getAll(ctx echo.Context) error {
 // @Router /todos [post]
 func (h *endpointHandler) create(ctx echo.Context) error {
 	h.logger.Infow("creating todo item...")
+	userId := ctx.Get("user_id").(uint)
 
 	item := ToDoItem{}
 	err := ctx.Bind(&item)
@@ -131,6 +133,8 @@ func (h *endpointHandler) create(ctx echo.Context) error {
 
 		return ctx.JSON(http.StatusBadRequest, e.ResponseError{Message: locale.ErrorCouldNotReadTodoItem})
 	}
+
+	item.UserID = userId
 
 	err = h.service.Create(ctx.Request().Context(), &item)
 	if err != nil {
@@ -157,14 +161,7 @@ func (h *endpointHandler) create(ctx echo.Context) error {
 // @Router /todos/{id} [put]
 func (h *endpointHandler) updateById(ctx echo.Context) error {
 	h.logger.Infow("updating todo item...")
-
-	itemInput := ToDoItemUpdateInput{}
-	err := ctx.Bind(&itemInput)
-	if err != nil {
-		h.logger.Warn("could not bind body to todo-item struct", "error", err.Error())
-
-		return ctx.JSON(http.StatusBadRequest, e.ResponseError{Message: locale.ErrorInvalidBody, Details: err.Error()})
-	}
+	userId := ctx.Get("user_id").(uint)
 
 	id, err := handlers.GetUrlId(ctx, h.logger)
 	if err != nil {
@@ -173,7 +170,27 @@ func (h *endpointHandler) updateById(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, e.ResponseError{Message: locale.ErrorInvalidID})
 	}
 
-	item, err := h.service.UpdateById(ctx.Request().Context(), id, itemInput)
+	item, err := h.service.GetById(ctx.Request().Context(), id)
+	if err != nil {
+		h.logger.Error("could not get item", "error", err.Error())
+
+		return ctx.JSON(http.StatusBadRequest, e.ResponseError{Message: locale.ErrorCouldNotReadTodoItem})
+	}
+	if item.UserID != userId {
+		h.logger.Info("user tried to modify todo of other user")
+
+		return ctx.JSON(http.StatusUnauthorized, e.ResponseError{Message: locale.ErrorNotFoundRecord})
+	}
+
+	itemInput := ToDoItemUpdateInput{}
+	err = ctx.Bind(&itemInput)
+	if err != nil {
+		h.logger.Warn("could not bind body to todo-item struct", "error", err.Error())
+
+		return ctx.JSON(http.StatusBadRequest, e.ResponseError{Message: locale.ErrorInvalidBody, Details: err.Error()})
+	}
+
+	item, err = h.service.UpdateById(ctx.Request().Context(), id, itemInput)
 	if err != nil {
 		h.logger.Warn("could not update todo-item", "error", err.Error())
 
@@ -195,12 +212,25 @@ func (h *endpointHandler) updateById(ctx echo.Context) error {
 // @Router /todos/{id} [delete]
 func (h *endpointHandler) deleteById(ctx echo.Context) error {
 	h.logger.Infow("deleting todo item...")
+	userId := ctx.Get("user_id").(uint)
 
 	id, err := handlers.GetUrlId(ctx, h.logger)
 	if err != nil {
 		h.logger.Warn("could not get id from url", "error", err.Error())
 
 		return ctx.JSON(http.StatusBadRequest, e.ResponseError{Message: locale.ErrorInvalidID})
+	}
+
+	item, err := h.service.GetById(ctx.Request().Context(), id)
+	if err != nil {
+		h.logger.Error("could not get item", "error", err.Error())
+
+		return ctx.JSON(http.StatusBadRequest, e.ResponseError{Message: locale.ErrorCouldNotReadTodoItem})
+	}
+	if item.UserID != userId {
+		h.logger.Info("user tried to delete todo of other user")
+
+		return ctx.JSON(http.StatusUnauthorized, e.ResponseError{Message: locale.ErrorNotFoundRecord})
 	}
 
 	err = h.service.DeleteById(ctx.Request().Context(), id)

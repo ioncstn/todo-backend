@@ -11,6 +11,7 @@ type ToDoItem struct {
 	DeletedAt *time.Time `gorm:"index"`
 	Text      string     `gorm:"not null" validate:"required"`
 	Done      bool       `gorm:"default:false"`
+	UserID    uint
 }
 
 type ToDoItemUpdateInput struct {

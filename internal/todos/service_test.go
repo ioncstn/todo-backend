@@ -56,6 +56,7 @@ func TestService_GetAll(t *testing.T) {
 		{Text: "Todo 1", Done: false},
 		{Text: "Todo 2", Done: true},
 	}
+	userId := uint(0)
 
 	mockRepo.
 		EXPECT().
@@ -65,22 +66,22 @@ func TestService_GetAll(t *testing.T) {
 
 	mockRepo.
 		EXPECT().
-		GetAll(ctx, PaginationDetails{}).
+		GetAllForUser(ctx, userId, PaginationDetails{}).
 		Return(expectedTodos, nil).
 		Times(1)
 
-	todos, metadata, err := service.GetAll(ctx, PaginationDetails{})
+	todos, metadata, err := service.GetAllForUser(ctx, userId, PaginationDetails{})
 	assert.NoError(t, err)
 	assert.Equal(t, expectedTodos, todos)
 	assert.Equal(t, metadata.ResultCount, metadata.TotalCount)
 
 	mockRepo.
 		EXPECT().
-		GetAll(ctx, PaginationDetails{Limit: 1, Page: 1}).
+		GetAllForUser(ctx, userId, PaginationDetails{Limit: 1, Page: 1}).
 		Return([]ToDoItem{expectedTodos[0]}, nil).
 		Times(1)
 
-	todos, metadata, err = service.GetAll(ctx, PaginationDetails{Limit: 1, Page: 1})
+	todos, metadata, err = service.GetAllForUser(ctx, userId, PaginationDetails{Limit: 1, Page: 1})
 	assert.NoError(t, err)
 	assert.Equal(t, expectedTodos[0], todos[0])
 	assert.Equal(t, metadata.ResultCount, 1)
